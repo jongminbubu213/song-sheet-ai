@@ -1,5 +1,5 @@
-fastapi
-uvicorn
+Flask==2.2.2
+Flask-Cors==3.0.10
+Werkzeug==2.2.2
 yt-dlp
-pydub
-numpy
+gunicorn
