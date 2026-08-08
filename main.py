@@ -20,47 +20,35 @@ def transcribe():
         if not youtube_url:
             return jsonify({"success": False, "message": "URL이 누락되었습니다."}), 400
 
-        # yt-dlp 타임아웃 및 차단 방지 최적화 옵션
-        ydl_opts = {
-            'quiet': True,
-            'skip_download': True,
-            'no_warnings': True,
-            'extract_flat': True,       # 상세 분석 생략으로 속도 10배 향상
-            'socket_timeout': 5,        # 5초 내 응답 없으면 바로 패스
-        }
-        
+        # 유튜브 제목 추출
         real_title = title
         try:
+            ydl_opts = {'quiet': True, 'skip_download': True, 'extract_flat': True, 'socket_timeout': 5}
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(youtube_url, download=False)
                 if info and 'title' in info:
                     real_title = info['title']
         except Exception as yt_err:
-            print(f"유튜브 추출 스킵 (기본 제목 사용): {yt_err}")
+            print(f"유튜브 추출 기본값 사용: {yt_err}")
 
-        # 악보 데이터 (Mock)
-        mock_song_form = [
-            {
-                "section": "Verse 1",
-                "measures": [
-                    {"chords": ["G", "D/F#"], "notes": ["g/4", "b/4", "d/5", "b/4"], "lyrics": ["주", "님", "을", " 바라"]},
-                    {"chords": ["Em", "Bm"], "notes": ["e/4", "g/4", "b/4", "g/4"], "lyrics": ["보는", " 자", "마다", " "]}
-                ]
-            },
-            {
-                "section": "Chorus (후렴)",
-                "measures": [
-                    {"chords": ["C", "G/B"], "notes": ["c/5", "e/5", "g/5", "e/5"], "lyrics": ["새", " 힘", "을", " 얻으"]},
-                    {"chords": ["Am7", "D7"], "notes": ["a/4", "c/5", "f#/4", "a/4"], "lyrics": ["리", "라", " ", " "]}
-                ]
-            }
-        ]
+        # 🎵 오선지, 박자, 마디, 코드, 멜로디, 가사가 결합된 ABC Notation 데이터
+        abc_code = f"""
+X:1
+T:{real_title}
+M:4/4
+L:1/4
+K:G
+"G" G2 "D/F#" B2 | "Em" E2 "Bm" B2 | "C" c2 "G/B" e2 | "Am7" A2 "D7" d2 |
+w: 주 님 을 바 라 보 는 자 마 다
+"G" G B d g | "C" e d B G | "Am7" A2 "D7" F2 | "G" G4 |]
+w: 새 힘 을 얻 으 리 라 주 님 안 에 -
+"""
 
         return jsonify({
             "success": True,
             "data": {
                 "title": real_title,
-                "songForm": mock_song_form
+                "abcNotation": abc_code
             }
         }), 200
 
