@@ -3,8 +3,9 @@ from flask_cors import CORS
 import yt_dlp
 import os
 
+# Gunicorn이 찾아야 하는 app 객체선언
 app = Flask(__name__)
-CORS(app)  # Google Apps Script와의 통신 허용
+CORS(app)
 
 @app.route('/', methods=['GET'])
 def health_check():
@@ -13,17 +14,16 @@ def health_check():
 @app.route('/api/transcribe', methods=['POST'])
 def transcribe():
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         youtube_url = data.get('youtube_url', '')
         title = data.get('title', '유튜브 추출 곡')
 
         if not youtube_url:
             return jsonify({"success": False, "message": "URL이 누락되었습니다."}), 400
 
-        # 1. 유튜브 메타데이터만 경량화 추출 (메모리 사용 최소화)
         ydl_opts = {
             'quiet': True,
-            'skip_download': True, # 음원을 직접 다운로드하지 않고 정보를 파싱
+            'skip_download': True,
             'no_warnings': True,
         }
         
@@ -36,8 +36,6 @@ def transcribe():
             except Exception as e:
                 print(f"유튜브 추출 경고: {e}")
 
-        # 2. Render 512MB RAM 초과 방지를 위한 템플릿 샘플 악보 구조 데이터 생성
-        # (실제 대형 AI 모델 대신 초경량 음악 구조 파싱 파이프라인)
         mock_song_form = [
             {
                 "section": "Verse 1",
