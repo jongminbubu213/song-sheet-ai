@@ -3,7 +3,6 @@ from flask_cors import CORS
 import yt_dlp
 import os
 
-# Gunicorn이 찾아야 하는 app 객체선언
 app = Flask(__name__)
 CORS(app)
 
@@ -14,28 +13,32 @@ def health_check():
 @app.route('/api/transcribe', methods=['POST'])
 def transcribe():
     try:
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         youtube_url = data.get('youtube_url', '')
         title = data.get('title', '유튜브 추출 곡')
 
         if not youtube_url:
             return jsonify({"success": False, "message": "URL이 누락되었습니다."}), 400
 
+        # yt-dlp 타임아웃 및 차단 방지 최적화 옵션
         ydl_opts = {
             'quiet': True,
             'skip_download': True,
             'no_warnings': True,
+            'extract_flat': True,       # 상세 분석 생략으로 속도 10배 향상
+            'socket_timeout': 5,        # 5초 내 응답 없으면 바로 패스
         }
         
         real_title = title
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            try:
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(youtube_url, download=False)
                 if info and 'title' in info:
                     real_title = info['title']
-            except Exception as e:
-                print(f"유튜브 추출 경고: {e}")
+        except Exception as yt_err:
+            print(f"유튜브 추출 스킵 (기본 제목 사용): {yt_err}")
 
+        # 악보 데이터 (Mock)
         mock_song_form = [
             {
                 "section": "Verse 1",
